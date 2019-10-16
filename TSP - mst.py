@@ -111,14 +111,15 @@ def unvisited_from_backtrack(adjlist, id, unvisited):
     backtrack = [x for x in adjlist[list(adjlist[id])[0]]]
     eligible = [e for e in backtrack if e in unvisited]
 
-    while not eligible:
+    if not eligible:
         for x in backtrack:
-            eligible = [e for e in adjlist[backtrack] if e in unvisited]
+            eligible = [e for e in adjlist[x] if e in unvisited]
             if eligible:
                 return eligible[0]
-
-        
-    return eligible[0]
+        # backtrack = [x for x in adjlist[list(adjlist[backtrack[0]])[0]]]
+    else:
+        return eligible[0]
+    return unvisited[0]
 
 def hamiltonian_path(tour):
     """ Apparently NP-hard on undirected graphs. Who scoped this assignment? """
@@ -144,6 +145,12 @@ def hamiltonian_path(tour):
     
     
     while len(unvisited) > 0:
+
+        # No more links left, complete the cycle (outside check, for dead-end backtracks)
+        if len(unvisited) == 1:
+            path.append(Edge(tour.get_node(currid), tour.get_node(startid)))
+            break
+
         # This check is because we might backtrack from a dead end
         if currid in unvisited:
             unvisited.remove(currid)
@@ -174,7 +181,7 @@ def hamiltonian_path(tour):
         # FINALLY process the neighids (or dead-end, neighids length = 1 to see where to go next)
         for neighid in neighids: 
 
-            # No more links left, complete the cycle
+            # No more links left, complete the cycle (inside check, for all normal cases)
             if neighid == startid and len(unvisited) == 0:
                 path.append(Edge(tour.get_node(currid), tour.get_node(startid)))
                 break
@@ -275,7 +282,7 @@ if __name__ == "__main__":
     # Make sure methods are working
     test()
 
-    nodelist = readTSP("eil51.tsp")
+    nodelist = readTSP("a280.tsp")
     nodes = dict(zip([node.id for node in nodelist], nodelist))
 
     # Wrap full MST set of edges in a Graph and build its adjacency list

@@ -107,7 +107,18 @@ def DFS_reachable(adjlist, id, reachable):
 
 def unvisited_from_backtrack(adjlist, id, unvisited):
     """ lol"""
-    return [x for x in adjlist[list(adjlist[id])[0]] if x in unvisited][0]
+    currid = id
+    backtrack = [x for x in adjlist[list(adjlist[id])[0]]]
+    eligible = [e for e in backtrack if e in unvisited]
+
+    while not eligible:
+        for x in backtrack:
+            eligible = [e for e in adjlist[backtrack] if e in unvisited]
+            if eligible:
+                return eligible[0]
+
+        
+    return eligible[0]
 
 def hamiltonian_path(tour):
     """ Apparently NP-hard on undirected graphs. Who scoped this assignment? """
@@ -133,11 +144,6 @@ def hamiltonian_path(tour):
     
     
     while len(unvisited) > 0:
-        # Get all neighbours from the adjacency list
-        print(f"curr: {currid}", end=" ")
-        print(tour.adjlist[currid])
-        print(f"\tUnvisited so far: {[n for n in unvisited]}")
-
         # This check is because we might backtrack from a dead end
         if currid in unvisited:
             unvisited.remove(currid)
@@ -145,16 +151,17 @@ def hamiltonian_path(tour):
         # If we encounter a dead end, create a new link
         if len(tour.adjlist[currid]) == 1:
             neighid = unvisited_from_backtrack(tour.adjlist, currid, unvisited)
+            
             path.append(Edge(tour.get_node(currid), tour.get_node(neighid)))
             currid = neighid
-            print(f"\tDEAD LINK. Creating link to {currid}")
             continue
+
         # Make sure unvisited actually has elements!
         elif tour.adjlist[currid].isdisjoint(unvisited) and unvisited:
             neighid = unvisited[0]
+
             path.append(Edge(tour.get_node(currid), tour.get_node(neighid)))
             currid = neighid
-            print(f"\tDEAD LINK. Creating link to {currid}")
             continue
             
         # Look ahead in neighbours of currid to try to redirect to the dead-end, if it exists (for completeness)
@@ -166,27 +173,21 @@ def hamiltonian_path(tour):
 
         # FINALLY process the neighids (or dead-end, neighids length = 1 to see where to go next)
         for neighid in neighids: 
-            print(f"\tneigh: {neighid}")
-            print(f"\tUnvisited so far: {[n for n in unvisited]}")
 
             # No more links left, complete the cycle
             if neighid == startid and len(unvisited) == 0:
                 path.append(Edge(tour.get_node(currid), tour.get_node(startid)))
-                print("END!")
                 break
             
             # Ignore visited neighbour
             if neighid not in unvisited:
-                print("\tVISITED\n")
                 continue
             
             # Otherwise, process this neighbour
             path.append(Edge(tour.get_node(currid), tour.get_node(neighid)))
             currid = neighid
-            print(f"\tPROCESSED\n")
             break
     
-    print(path)
     # Return the edgelist we follow, and the final cost
     return (path, sum([e.weight for e in path]))
         
@@ -274,7 +275,7 @@ if __name__ == "__main__":
     # Make sure methods are working
     test()
 
-    nodelist = readTSP("a280.tsp")
+    nodelist = readTSP("eil51.tsp")
     nodes = dict(zip([node.id for node in nodelist], nodelist))
 
     # Wrap full MST set of edges in a Graph and build its adjacency list
@@ -295,7 +296,6 @@ if __name__ == "__main__":
 
     # Get the odd vertices here to check where we need to start and end (or if the entire thing is already a cycle)
     combined_graph_odd_verts = odd_degree_vertices(combined_graph)
-    print(combined_graph_odd_verts)
 
     # Get tour as an edgelist
     tour = eulerian_tour(combined_graph, combined_edgelist, combined_graph_odd_verts)
@@ -305,7 +305,7 @@ if __name__ == "__main__":
     # Hamiltonian path between the nodes
     solution, final_cost = hamiltonian_path(eul_tour)
     print(final_cost)
-    print(solution)
+    print([f'{e.n1.id} -> {e.n2.id}' for e in solution])
 
 
 

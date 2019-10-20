@@ -1,7 +1,8 @@
 from math import sqrt
 from queue import PriorityQueue
 from collections import defaultdict
-from typing import Set
+from typing import Set, List, Iterator
+from itertools import cycle
 from pprint import pprint, pformat
 
 class Node:
@@ -39,6 +40,9 @@ class Edge:
 
     def nodes(self):
         return (self.n1, self.n2)
+
+    def reverse(self):
+        return Edge(self.n2, self.n1)
 
     def __hash__(self):
         """ Hash the same whether n1 or n2 are switched. """
@@ -84,6 +88,8 @@ class Graph:
         self.mst_cost = 0
 
     def create_node_dict(self, nodes):
+        if not nodes:
+            nodes = self.nodes
         self.nodes = dict(zip([node.id for node in nodes], nodes))  
 
     def populate(self, edgelist=None):
@@ -145,6 +151,43 @@ class Graph:
 
     def __repr__(self):
         return pformat(self.adjlist)
+
+class Path:
+    def __init__(self, edgelist):
+        self.path: List[Edge] = edgelist
+        self.cycle: Iterator[Edge] = cycle(edgelist)
+
+        self.adjlist = defaultdict(list)
+        self.cost = 0
+        for edge in edgelist:
+            self.adjlist[edge.n1].append(edge.n2)
+            self.cost += edge.weight
+
+        self.nodes = list(self.adjlist.keys())
+
+    def next_edge(self, node) -> Edge:
+        return Edge(node, self.adjlist[node][0])
+
+    def segment(self, start, end):
+        seg = []
+        currn = start
+        
+        while currn != end:
+            seg.append(self.next_edge(currn))
+            currn = self.adjlist[currn][0]
+        return Path(seg)
+            
+    def reverse(self):
+        return Path([e.reverse() for e in self.path][::-1])
+
+    def clone(self):
+        return Path(self.path)
+
+    def __str__(self):
+        return pformat(self.path)
+
+    def __repr__(self):
+        return pformat(self.path)
 
 def readTSP(tspfile):
     nodes = []
